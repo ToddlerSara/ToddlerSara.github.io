@@ -5,8 +5,10 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <header>
+    <el-icon :size="30" color="#409EFC">
+      <Message />
+    </el-icon>
     <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
     <div class="wrapper">
       <HelloWorld msg="You did it!" />
 
