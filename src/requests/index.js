@@ -16,4 +16,7 @@ function getName() {
   return axios.get(`https://jsonplaceholder.typicode.com/users`)
 }
 
-export { getName }
+function SelectionProduct() {
+  return axios.get(`https://jsonplaceholder.typicode.com/albums`)
+}
+export { getName, SelectionProduct }

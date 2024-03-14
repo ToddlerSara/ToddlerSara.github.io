@@ -53,11 +53,9 @@ onMounted(() => {
       </div> -->
 
         <!-- 使用自定義來接收Object→const nameList = ref({ name: '', email: '' }) -->
-        <!-- <div v-for="(name, index) in nameList" :key="`name-${index}`" class="text item">
-        {{ 'List item ' + index }}
-        <p>Name: {{ nameList.name }}</p>
+        <!-- <p>Name: {{ nameList.name }}</p>
         <p>Email: {{ nameList.email }}</p>
-      </div> -->
+      </div>  -->
         <template #footer>
           <p>company: {{ n.company.name }}</p>
           <p>{{ n.company.catchPhrase }}</p>
