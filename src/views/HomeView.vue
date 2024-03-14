@@ -1,91 +1,88 @@
 <script setup>
 // import TheWelcome from '../components/TheWelcome.vue'
-import { reactive } from 'vue'
+import { getName } from '@/requests/index'
+import { onMounted } from 'vue'
+import { ref } from "vue"
 
-// do not use same name with ref
-const form = reactive({
-  name: '',
-  region: '',
-  date1: '',
-  date2: '',
-  delivery: false,
-  type: [],
-  resource: '',
-  desc: '',
-})
+// 定義一個變數
+const nameList = ref([])
+onMounted(() => {
+  getName().then(({ data }) => {
+    console.log(data);
+    // 使用.value來接收data的值
+    nameList.value = data
+  });
+});
 
-const onSubmit = () => {
-  console.log('submit!')
-}
+// 定義一個變數，使用object
+// const nameList = ref({ name: '', email: '' })
+// onMounted(() => {
+//   // setTimeout可以搭配onclick使用
+//   setTimeout(() => {
+//     getName().then(({ data }) => {
+//       console.log(data);
+//       // 使用.value&.name來接收data的值
+//       nameList.value.name = data[0].name;
+//       nameList.value.email = data[0].email;
+//     });
+//   }, 5000);
+// });
+
 </script>
 
 <template>
   <main>
     <!-- <TheWelcome /> -->
-    <div class="mb-4">
-      <el-button>Default</el-button>
-      <el-button type="primary">Primary</el-button>
-      <el-button type="success">Success</el-button>
-      <el-button type="info">Info</el-button>
-      <el-button type="warning">Warning</el-button>
-      <el-button type="danger">Danger</el-button>
-    </div>
-    <br>
-    <div>
-      <el-form :model="form" label-width="auto" style="max-width: 600px">
-        <el-form-item label="Activity name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item label="Activity zone">
-          <el-select v-model="form.region" placeholder="please select your zone">
-            <el-option label="Zone one" value="shanghai" />
-            <el-option label="Zone two" value="beijing" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Activity time">
-          <el-col :span="11">
-            <el-date-picker v-model="form.date1" type="date" placeholder="Pick a date" style="width: 100%" />
-          </el-col>
-          <el-col :span="2" class="text-center">
-            <span class="text-gray-500">-</span>
-          </el-col>
-          <el-col :span="11">
-            <el-time-picker v-model="form.date2" placeholder="Pick a time" style="width: 100%" />
-          </el-col>
-        </el-form-item>
-        <el-form-item label="Instant delivery">
-          <el-switch v-model="form.delivery" />
-        </el-form-item>
-        <el-form-item label="Activity type">
-          <el-checkbox-group v-model="form.type">
-            <el-checkbox value="Online activities" name="type">
-              Online activities
-            </el-checkbox>
-            <el-checkbox value="Promotion activities" name="type">
-              Promotion activities
-            </el-checkbox>
-            <el-checkbox value="Offline activities" name="type">
-              Offline activities
-            </el-checkbox>
-            <el-checkbox value="Simple brand exposure" name="type">
-              Simple brand exposure
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item label="Resources">
-          <el-radio-group v-model="form.resource">
-            <el-radio value="Sponsor">Sponsor</el-radio>
-            <el-radio value="Venue">Venue</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="Activity form">
-          <el-input v-model="form.desc" type="textarea" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit">Create</el-button>
-          <el-button>Cancel</el-button>
-        </el-form-item>
-      </el-form>
+    <div class="cards">
+      <el-card v-for="(n, index) in nameList" :key="`n-${index}`" class="text item">
+        <template #header>
+          <div class="card-header">
+            {{ 'List item ' + index }}
+            <p>Name: {{ n.name }}</p>
+          </div>
+        </template>
+        <p>Email: {{ n.email }}</p>
+        <p>address: {{ n.address.street + ' ' + n.address.suite + ' ' + n.address.city + ' ' + n.address.zipcode }}</p>
+        <p>phone: {{ n.phone }}</p>
+
+        <!-- 使用nameList.value = data來運作 -->
+        <!-- <div v-for="(n, index) in nameList" :key="`n-${index}`" class="text item">
+        {{ 'List item ' + index }}
+        <p>Name: {{ n.name }}</p>
+        <p>Email: {{ n.email }}</p>
+      </div> -->
+
+        <!-- 使用自定義來接收Object→const nameList = ref({ name: '', email: '' }) -->
+        <!-- <div v-for="(name, index) in nameList" :key="`name-${index}`" class="text item">
+        {{ 'List item ' + index }}
+        <p>Name: {{ nameList.name }}</p>
+        <p>Email: {{ nameList.email }}</p>
+      </div> -->
+        <template #footer>
+          <p>company: {{ n.company.name }}</p>
+          <p>{{ n.company.catchPhrase }}</p>
+          <p>{{ n.company.bs }}</p>
+        </template>
+      </el-card>
     </div>
   </main>
 </template>
+<style>
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 10px;
+  font-size: 100%;
+}
+
+.text {
+  color: #202020;
+  font-family: "Indie Flower", cursive;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.card-header {
+  font-size: 0.9rem;
+}
+</style>
