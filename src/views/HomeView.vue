@@ -10,30 +10,36 @@ onMounted(() => {
   getName().then(({ data }) => {
     console.log(data);
     // 使用.value來接收data的值
-    nameList.value = data
+    nameList.value = data; // [{} x 200]
   });
 });
 
 // 定義一個變數，使用object
-// const nameList = ref({ name: '', email: '' })
-// onMounted(() => {
-//   // setTimeout可以搭配onclick使用
-//   setTimeout(() => {
-//     getName().then(({ data }) => {
-//       console.log(data);
-//       // 使用.value&.name來接收data的值
-//       nameList.value.name = data[0].name;
-//       nameList.value.email = data[0].email;
-//     });
-//   }, 5000);
-// });
+const onePerson = ref([{ name: '123', email: '' }])   //  {}
+onMounted(() => {
+  // setTimeout可以搭配onclick使用
+  setTimeout(() => {
+    getName().then(({ data }) => {
+      console.log(data);
+      // 使用.value&.name來接收data 特定的值
+      // onePerson.value = data
+      onePerson.value[0].name = data[5].name;
+      onePerson.value[0].email = data[5].email;
+    });
+  }, 500);
+});
 
 </script>
 
 <template>
   <main>
-    <!-- <TheWelcome /> -->
+    <!-- 單獨選出特定值 -->
+    <div v-for="(k, index) in onePerson" :key="index">
+      {{ k.name }}<br>
+      {{ k.email }}
+    </div>
     <div class="cards">
+      <!-- 使用nameList.value = data來運作 -->
       <el-card v-for="(n, index) in nameList" :key="`n-${index}`" class="text item">
         <template #header>
           <div class="card-header">
@@ -44,18 +50,6 @@ onMounted(() => {
         <p>Email: {{ n.email }}</p>
         <p>address: {{ n.address.street + ' ' + n.address.suite + ' ' + n.address.city + ' ' + n.address.zipcode }}</p>
         <p>phone: {{ n.phone }}</p>
-
-        <!-- 使用nameList.value = data來運作 -->
-        <!-- <div v-for="(n, index) in nameList" :key="`n-${index}`" class="text item">
-        {{ 'List item ' + index }}
-        <p>Name: {{ n.name }}</p>
-        <p>Email: {{ n.email }}</p>
-      </div> -->
-
-        <!-- 使用自定義來接收Object→const nameList = ref({ name: '', email: '' }) -->
-        <!-- <p>Name: {{ nameList.name }}</p>
-        <p>Email: {{ nameList.email }}</p>
-      </div>  -->
         <template #footer>
           <p>company: {{ n.company.name }}</p>
           <p>{{ n.company.catchPhrase }}</p>
