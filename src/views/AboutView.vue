@@ -9,13 +9,12 @@ onMounted(() => {
   // setTimeout可以搭配onclick使用
   setTimeout(() => {
     //API promise.then&.catch使用
-    SelectionProduct()
-      .then(({ data }) => {
-        // console.log(data);
-        ProductList.value = data;
-        console.log(ProductList.value);
-        afterProcess()
-      })
+    SelectionProduct().then(({ data }) => {
+      // console.log(data);
+      ProductList.value = data;
+      console.log(ProductList.value);
+      afterProcess()
+    })
       .catch(fail => {
         console.log(fail);
       });

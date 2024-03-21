@@ -19,4 +19,8 @@ function getName() {
 function SelectionProduct() {
   return axios.get(`https://jsonplaceholder.typicode.com/albums`)
 }
-export { getName, SelectionProduct }
+
+function getPokemonLink(offset, limit) {
+  return axios.get(`https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`)
+}
+export { getName, SelectionProduct, getPokemonLink }
