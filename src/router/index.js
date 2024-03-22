@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import PokemonDetailView from '../components/PokemonDetailView.vue' // Import the new view
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,12 @@ const router = createRouter({
       path: '/pokemoncard',
       name: 'pokemon',
       component: () => import('../views/pokemonList.vue')
+    },
+    {
+      path: '/pokemon/:id/:name/:const', // Add a dynamic segment ':id' to receive the Pokemon ID
+      name: 'pokemon-detail',
+      component: PokemonDetailView, // Use the new view for Pokemon detail
+      props: true // Enable passing route params as props
     }
   ]
 })
