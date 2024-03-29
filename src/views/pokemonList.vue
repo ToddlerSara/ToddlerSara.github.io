@@ -1,15 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getPokemonLink, getChineseName } from '@/requests/index';
-import { useRouter } from 'vue-router';
+import { getPokemonLink, getChineseName, getPokemonDetail } from '@/requests/index';
 
-const router = useRouter();
 const limit = 20;
 const offset = ref(0);
 const pokemons = ref([]);
 let totalResults = 0;
 const lastOffset = ref(0);
 const displayedPokemons = ref([]);
+const isModalVisible = ref(false);
+const selectedPokemon = ref(null);
 
 onMounted(() => {
     fetchData(offset.value);
@@ -56,6 +56,7 @@ const formatPokemonId = (id) => {
     // Ensure the ID is always four digits
     return id.toString().padStart(4, '0');
 };
+
 const getChineseNames = async (names) => {
     const chineseNames = await Promise.all(names.map(name => getChineseName(name)));
     return chineseNames;
@@ -97,9 +98,29 @@ const nextPage = () => {
     }
 };
 
-const goToDetail = (pokemon) => {
-    router.push({ name: 'pokemon-detail', params: { id: pokemon.id, const: pokemon.constid, name: pokemon.name }, state: { pokemon: pokemon } });
+const openDetailModal = (pokemon) => {
+    console.log('Selected Pokemon:', pokemon);
+    selectedPokemon.value = pokemon;
+    isModalVisible.value = true;
+
+    // Fetch Pokemon detail
+    getPokemonDetail(pokemon.id)
+        .then(({ data }) => {
+            selectedPokemon.value = {
+                ...selectedPokemon.value,
+                height: data.height,
+                weight: data.weight
+            };
+        })
+        .catch(error => {
+            console.error('Error fetching Pokemon details:', error);
+        });
 };
+
+const closeDetailModal = () => {
+    isModalVisible.value = false;
+};
+
 </script>
 
 <template>
@@ -109,19 +130,32 @@ const goToDetail = (pokemon) => {
             <button @click="prevPage" :disabled="offset <= 0">上一頁</button>
             <button @click="nextPage" :disabled="lastOffset <= offset">下一頁</button>
         </div>
-        <transition name="fade">
-            <div class="pokemon-container" v-if="displayedPokemons.length > 0">
-                <div v-for="(pokemon, index) in displayedPokemons" :key="index" class="pokemon-item">
-                    <div class="pokemon-image" @click="goToDetail(pokemon)">
-                        <img v-if="pokemon.image" :src="pokemon.image" :alt="pokemon.name" />
-                        <div v-if="pokemon.image" class="pokemon-info">
-                            <div class="pokemon-id">{{ pokemon.constid }}</div>
-                            <div class="pokemon-name">{{ pokemon.name }}</div>
-                        </div>
+        <div class="pokemon-container" v-if="displayedPokemons.length > 0">
+            <div v-for="(pokemon, index) in displayedPokemons" :key="index" class="pokemon-item">
+                <div class="pokemon-image" @click="openDetailModal(pokemon)">
+                    <img v-if="pokemon.image" :src="pokemon.image" :alt="pokemon.name" />
+                    <div v-if="pokemon.image" class="pokemon-info">
+                        <div class="pokemon-id">{{ pokemon.constid }}</div>
+                        <div class="pokemon-name">{{ pokemon.name }}</div>
                     </div>
                 </div>
             </div>
-        </transition>
+        </div>
+        <!-- Modal -->
+        <el-dialog v-model="isModalVisible" :show-close="false" width="500">
+            <div class="dialog-header">
+                <h1>Pokemon Detail</h1>
+                <el-button @click="closeDetailModal">Close</el-button>
+            </div>
+            <div v-if="selectedPokemon" class="dialog-container">
+                <p>編號：{{ selectedPokemon.constid }}</p>
+                <p>名字：{{ selectedPokemon.name }}</p>
+                <img class="dialog-container-img" :src="selectedPokemon.image" :alt="selectedPokemon.id" />
+                <p>身高：{{ selectedPokemon.height }}</p>
+                <p>體重：{{ selectedPokemon.weight }}</p>
+                <!-- 其他寶可夢資訊 -->
+            </div>
+        </el-dialog>
     </div>
 </template>
 
@@ -205,5 +239,15 @@ img {
     left: 10%;
     top: 62%;
     color: #fff;
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.dialog-container,
+.dialog-container-img {
+    position: relative;
 }
 </style>
