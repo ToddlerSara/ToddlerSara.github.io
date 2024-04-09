@@ -117,23 +117,6 @@ const openDetailModal = (pokemon) => {
                 evolutionUrls: evolutionUrls // 将进化链 URL 数组存储在 selectedPokemon 中
             };
         })
-
-    // Fetch Pokemon detail and evolution chain
-    // Promise.all([
-    //     getPokemonDetail(pokemon.id),
-    //     getPokemonEvolution(pokemon.id)
-    // ]).then(([detailResponse, evolutionUrls]) => {
-    //     const data = detailResponse.data;
-    //     selectedPokemon.value = {
-    //         ...pokemon,
-    //         height: data.height,
-    //         weight: data.weight,
-    //         evolutionUrls: evolutionUrls // 将进化链 URL 数组存储在 selectedPokemon 中
-    //     };
-    //     isModalVisible.value = true;
-    // }).catch(error => {
-    //     console.error('Error fetching Pokemon details and evolution:', error);
-    // });
 };
 
 const closeDetailModal = () => {
