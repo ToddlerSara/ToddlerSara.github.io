@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getPokemonLink, getChineseName, getPokemonDetail } from '@/requests/index';
+import { getPokemonLink, getChineseName, getPokemonDetail, getPokemonImage, getPokemonEvolution } from '@/requests/index';
 
 const limit = 20;
 const offset = ref(0);
@@ -30,7 +30,7 @@ const fetchData = (offset) => {
                 name: chineseNames[index], // Use Chinese name
                 constid: formatPokemonId(getPokemonId(pokemon.url)),
                 id: getPokemonId(pokemon.url),
-                image: getPokemonImage(pokemon.url),
+                image: getPokemonImage(getPokemonId(pokemon.url)),
                 valid: true
             }));
             console.log('Pokemons:', pokemons.value); // Add this line for debugging
@@ -41,11 +41,6 @@ const fetchData = (offset) => {
         .catch(error => {
             console.error('Error fetching Pokemon data:', error);
         });
-};
-
-const getPokemonImage = (url) => {
-    const id = getPokemonId(url);
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${id}.png`;
 };
 
 const getPokemonId = (url) => {
@@ -100,10 +95,12 @@ const nextPage = () => {
 
 const openDetailModal = (pokemon) => {
     console.log('Selected Pokemon:', pokemon);
-    selectedPokemon.value = pokemon;
+    selectedPokemon.value = {
+        ...pokemon,
+    }
     isModalVisible.value = true;
 
-    // Fetch Pokemon detail
+    // 获取宝可梦的详细信息
     getPokemonDetail(pokemon.id)
         .then(({ data }) => {
             selectedPokemon.value = {
@@ -112,9 +109,31 @@ const openDetailModal = (pokemon) => {
                 weight: data.weight
             };
         })
-        .catch(error => {
-            console.error('Error fetching Pokemon details:', error);
-        });
+    getPokemonEvolution(pokemon.id)
+        .then((evolutionUrls) => {
+            console.log('Evolution URLs:', evolutionUrls);
+            selectedPokemon.value = {
+                ...selectedPokemon.value,
+                evolutionUrls: evolutionUrls // 将进化链 URL 数组存储在 selectedPokemon 中
+            };
+        })
+
+    // Fetch Pokemon detail and evolution chain
+    // Promise.all([
+    //     getPokemonDetail(pokemon.id),
+    //     getPokemonEvolution(pokemon.id)
+    // ]).then(([detailResponse, evolutionUrls]) => {
+    //     const data = detailResponse.data;
+    //     selectedPokemon.value = {
+    //         ...pokemon,
+    //         height: data.height,
+    //         weight: data.weight,
+    //         evolutionUrls: evolutionUrls // 将进化链 URL 数组存储在 selectedPokemon 中
+    //     };
+    //     isModalVisible.value = true;
+    // }).catch(error => {
+    //     console.error('Error fetching Pokemon details and evolution:', error);
+    // });
 };
 
 const closeDetailModal = () => {
@@ -151,9 +170,18 @@ const closeDetailModal = () => {
                 <p>編號：{{ selectedPokemon.constid }}</p>
                 <p>名字：{{ selectedPokemon.name }}</p>
                 <img class="dialog-container-img" :src="selectedPokemon.image" :alt="selectedPokemon.id" />
-                <p>身高：{{ selectedPokemon.height }}</p>
-                <p>體重：{{ selectedPokemon.weight }}</p>
+                <p>身高：{{ selectedPokemon.height / 10 || 0 }}m</p>
+                <p>體重：{{ selectedPokemon.weight / 10 || 0 }}kg</p>
                 <!-- 其他寶可夢資訊 -->
+                <div v-if="selectedPokemon && selectedPokemon.evolutionUrls && selectedPokemon.evolutionUrls.length > 1"
+                    class="evolution-container">
+                    <div v-for="(url, index) in selectedPokemon.evolutionUrls" :key="index" class="evolution-item">
+                        <img class="evolutionImg" :src="url" alt="Evolution Image" />
+                    </div>
+                </div>
+                <div v-else>
+                    不能進化
+                </div>
             </div>
         </el-dialog>
     </div>
@@ -215,6 +243,19 @@ img {
     width: 60%;
     left: 20%;
     top: 8%;
+}
+
+.evolution-container {
+    display: flex;
+}
+
+.evolution-item {
+    margin-right: 10px;
+    /* 可以调整图片之间的间距 */
+}
+
+.evolutionImg {
+    position: relative;
 }
 
 .pokemon-info {

@@ -48,4 +48,57 @@ const getChineseName = async (pokemonName) => {
   }
 }
 
-export { getName, SelectionProduct, getPokemonLink, getChineseName, getPokemonDetail }
+const getPokemonImage = (id) => {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${id}.png`
+}
+
+const getPokemonEvolution = async (id) => {
+  try {
+    const Pokemonspecies = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}/`)
+    let evolutionChainUrl = Pokemonspecies.data.evolution_chain.url
+    console.log('Evolution Chain URL:', evolutionChainUrl)
+
+    const chainResponse = await axios.get(evolutionChainUrl)
+    const chainData = chainResponse.data.chain
+    const evolutionUrls = []
+
+    const getEvolution = (chainData) => {
+      console.log('chainData:', chainData)
+
+      // 检查是否存在物种和物种
+      if (chainData.species && chainData.species.url) {
+        evolutionUrls.push(getPokemonImage(getPokemonIdFromUrl(chainData.species.url)))
+      } else {
+        console.error('Species URL is undefined:', chainData)
+      }
+
+      if (chainData.evolves_to && chainData.evolves_to.length > 0) {
+        // 检查是否存在 evolves_to 属性和下一个进化节点
+        getEvolution(chainData.evolves_to[0])
+      }
+    }
+
+    // 开始递归获取进化链
+    await getEvolution(chainData)
+    console.log('evolutionUrls:', evolutionUrls)
+    return evolutionUrls
+  } catch (error) {
+    console.error('Error fetching Pokemon evolution:', error)
+    return []
+  }
+}
+
+const getPokemonIdFromUrl = (url) => {
+  const segments = url.split('/')
+  return segments[segments.length - 2]
+}
+
+export {
+  getName,
+  SelectionProduct,
+  getPokemonLink,
+  getChineseName,
+  getPokemonDetail,
+  getPokemonImage,
+  getPokemonEvolution
+}
