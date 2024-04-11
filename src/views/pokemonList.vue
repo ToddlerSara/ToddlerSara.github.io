@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { getPokemonLink, getChineseName, getPokemonDetail, getPokemonImage, getPokemonEvolution } from '@/requests/index';
+import { getPokemonId, formatPokemonId } from '@/utils/utils'
 
 const limit = 20;
 const offset = ref(0);
@@ -23,11 +24,12 @@ const fetchData = (offset) => {
             lastOffset.value = Math.floor((totalResults - 1) / limit) * limit;
 
             // Get Chinese names for each Pokemon
-            const pokemonNames = data.results.map(pokemon => pokemon.name);
-            const chineseNames = await getChineseNames(pokemonNames);
+            const pokemonIds = data.results.map(pokemon => getPokemonId(pokemon.url));
+            const chineseNames = await getChineseNames(pokemonIds);
 
             pokemons.value = data.results.map((pokemon, index) => ({
-                name: chineseNames[index], // Use Chinese name
+                name: chineseNames[index].name, // Use Chinese name
+                chainUrl: chineseNames[index].chainUrl,
                 constid: formatPokemonId(getPokemonId(pokemon.url)),
                 id: getPokemonId(pokemon.url),
                 image: getPokemonImage(getPokemonId(pokemon.url)),
@@ -43,18 +45,29 @@ const fetchData = (offset) => {
         });
 };
 
-const getPokemonId = (url) => {
-    return url.split('/').slice(-2, -1)[0];
-};
+// const getPokemonId = (url) => {
+//     return url.split('/').slice(-2, -1)[0];
+// };
 
-const formatPokemonId = (id) => {
-    // Ensure the ID is always four digits
-    return id.toString().padStart(4, '0');
-};
+// const formatPokemonId = (id) => {
+//     // Ensure the ID is always four digits
+//     return id.toString().padStart(4, '0');
+// };
 
-const getChineseNames = async (names) => {
-    const chineseNames = await Promise.all(names.map(name => getChineseName(name)));
-    return chineseNames;
+const getChineseNames = async (ids) => {
+    const species = await Promise.all(ids.map(id => getChineseName(id)));
+    return species.map(response => {
+        const name = response.data.name
+        const names = response.data.names
+        const nameObj = names.find((name) => name.language.name === 'zh-Hant')
+        const evolutionChainUrl = response.data.evolution_chain.url
+        if (nameObj) {
+            return { name: nameObj.name, chainUrl: evolutionChainUrl }
+        } else {
+            // 如果找不到对应语言的名称，返回空字符串或其他默认值
+            return { name: name, chainUrl: evolutionChainUrl }
+        }
+    })
 };
 
 const preloadNextPage = () => {
@@ -106,17 +119,83 @@ const openDetailModal = (pokemon) => {
             selectedPokemon.value = {
                 ...selectedPokemon.value,
                 height: data.height,
-                weight: data.weight
+                weight: data.weight,
+
             };
         })
-    getPokemonEvolution(pokemon.id)
-        .then((evolutionUrls) => {
+    getPokemonEvolution(pokemon.chainUrl)
+        .then((chainResponse) => {
+            const evolutionUrls = getPokemonEvolutionUrls(chainResponse.data.chain);
             console.log('Evolution URLs:', evolutionUrls);
             selectedPokemon.value = {
                 ...selectedPokemon.value,
-                evolutionUrls: evolutionUrls // 将进化链 URL 数组存储在 selectedPokemon 中
+                evolutionUrls: evolutionUrls// 将进化链 URL 数组存储在 selectedPokemon 中
             };
         })
+};
+
+const getPokemonIdFromUrl = (url) => {
+    const segments = url.split('/')
+    return segments[segments.length - 2]
+}
+
+const getPokemonEvolutionUrls = (chainData) => {
+    const evolutions = []
+
+    const getEvolution = (chainData) => {
+        console.log('chainData:', chainData)
+
+        // 检查是否存在物种和物种
+        if (chainData.species && chainData.species.url) {
+            const chainDataSpeciesId = getPokemonIdFromUrl(chainData.species.url)
+            const chainDataSpeciesImg = getPokemonImage(chainDataSpeciesId)
+            evolutions.push({ evolutionUrls: chainDataSpeciesImg, speciesId: chainDataSpeciesId })
+        } else {
+            console.error('Species URL is undefined:', chainData)
+        }
+
+        if (chainData.evolves_to && chainData.evolves_to.length > 0) {
+            // 检查是否存在 evolves_to 属性和下一个进化节点
+            getEvolution(chainData.evolves_to[0])
+        }
+    }
+
+    // 开始递归获取进化链
+    getEvolution(chainData)
+    console.log('evolutions:', evolutions)
+    return evolutions
+}
+
+const handleEvolutionClick = (id) => {
+    // 处理点击事件的逻辑，可以在此处实现你想要的行为
+    console.log('Clicked on evolution image:', id);
+    handleSinglePokemon(id);
+};
+
+const handleSinglePokemon = (id) => {
+    getChineseNames([id]) // 传递数组给 getChineseNames，因为它期望一个 ID 数组
+        .then((chineseNames) => {
+            const chineseName = chineseNames[0]; // 获取数组中的第一个元素，即对应于传入 ID 的中文名称
+            getPokemonDetail(id)
+                .then(() => {
+                    const formattedPokemon = {
+                        name: chineseName.name,
+                        chainUrl: chineseName.chainUrl,
+                        constid: formatPokemonId(id),
+                        id: id,
+                        image: getPokemonImage(id),
+                        valid: true
+                    };
+                    // 调用 openDetailModal 函数
+                    openDetailModal(formattedPokemon);
+                })
+                .catch(error => {
+                    console.error('Error fetching Pokemon detail:', error);
+                });
+        })
+        .catch(error => {
+            console.error('Error fetching Chinese names:', error);
+        });
 };
 
 const closeDetailModal = () => {
@@ -156,14 +235,16 @@ const closeDetailModal = () => {
                 <p>身高：{{ selectedPokemon.height / 10 || 0 }}m</p>
                 <p>體重：{{ selectedPokemon.weight / 10 || 0 }}kg</p>
                 <!-- 其他寶可夢資訊 -->
-                <div v-if="selectedPokemon && selectedPokemon.evolutionUrls && selectedPokemon.evolutionUrls.length > 1"
-                    class="evolution-container">
-                    <div v-for="(url, index) in selectedPokemon.evolutionUrls" :key="index" class="evolution-item">
-                        <img class="evolutionImg" :src="url" alt="Evolution Image" />
+                <div class="evolution-body" v-if="selectedPokemon.evolutionUrls">進化鏈
+                    <div v-if="selectedPokemon.evolutionUrls.length > 1" class="evolution-container">
+                        <div v-for="(url, index) in selectedPokemon.evolutionUrls" :key="index" class="evolution-item">
+                            <img class="evolutionImg" :src="url.evolutionUrls" alt="Evolution Image"
+                                @click="handleEvolutionClick(url.speciesId, url.evolutionUrls)" />
+                        </div>
                     </div>
-                </div>
-                <div v-else>
-                    不能進化
+                    <div v-else>
+                        不能進化
+                    </div>
                 </div>
             </div>
         </el-dialog>
@@ -228,13 +309,12 @@ img {
     top: 8%;
 }
 
-.evolution-container {
-    display: flex;
+.evolution-body {
+    font-size: large;
 }
 
-.evolution-item {
-    margin-right: 10px;
-    /* 可以调整图片之间的间距 */
+.evolution-container {
+    display: flex;
 }
 
 .evolutionImg {
