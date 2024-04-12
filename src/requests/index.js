@@ -35,7 +35,12 @@ const getPokemonImage = (id) => {
 }
 
 const getChineseName = async (id) => {
-  return await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+  try {
+    return await axios.get((await getPokemonDetail(id)).data.species.url)
+  } catch (error) {
+    console.error('Error fetching PokemonName :', error)
+    return null
+  }
 }
 
 const getPokemonEvolution = async (evolutionChainUrl) => {
@@ -55,8 +60,8 @@ export {
   getName,
   SelectionProduct,
   getPokemonLink,
-  getChineseName,
   getPokemonDetail,
   getPokemonImage,
-  getPokemonEvolution
+  getPokemonEvolution,
+  getChineseName
 }
