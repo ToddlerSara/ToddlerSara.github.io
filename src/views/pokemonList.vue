@@ -144,7 +144,7 @@ const handleSinglePokemon = (id) => {
 };
 
 const searchId = ref('')
-const searchPokemon = () => {
+const searchPokemon = (searchId) => {
     // 首先检查搜索的 ID 是否在范围内
     if (searchId.value < 1 || searchId.value > totalResults) {
         throw new Error('Invalid Pokemon ID');
@@ -174,7 +174,7 @@ const handlePageChange = (page) => {
             <label style="width: 180px">
                 <input type="text" v-model="searchId" placeholder="输入要搜索的ID">
                 <el-button type="primary" value="Submit" size="small" :icon="Search"
-                    @click="searchPokemon">Search</el-button>
+                    @click="searchPokemon(searchId)">Search</el-button>
             </label>
             <el-pagination background layout="prev, pager, next" :total="1302" :page-size="20"
                 @current-change="handlePageChange" :disabled="offset < 0 || offset > lastOffset" />
